@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 key = os.getenv('OPENAI_API_KEY')
+stable_difussion_key = os.getenv('STABLE_DIFUSION_API_KEY')
 
 HTML_FOLDER = './html/'
 
@@ -39,17 +40,34 @@ def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,det
     
     return prompt
 
+def makepromptForSalesPoint(businessType, target, personasGender, age, imageColor, detail, catchcopy):    
+    prompt = "以下の特徴をもつランディングページに記載するセールスポイントを3つ考えてください。"
+    addCondition(prompt,"業界", businessType)
+    prompt = addCondition(prompt,"ターゲット", target)
+    prompt = addCondition(prompt,"ペルソナの性別", personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢", age)
+    prompt = addCondition(prompt,"LPのイメージカラー", imageColor)
+    prompt = addCondition(prompt,"キャッチコピー", catchcopy)
+    prompt = addCondition(prompt,"サービス概要", detail)
 
-def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy):    
-    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
+    return prompt
+
+def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy,sales_points):    
+    prompt = "以下の特徴をもつランディングページのHTMLを作成し、HTML部分のみを返答してください。\n"
     addCondition(prompt,"業界",businessType)
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
     prompt = addCondition(prompt,"ペルソナの年齢",age)
     prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,"キャッチコピー",catchcopy)
-    prompt = addCondition(prompt,"",detail)
-        
+    prompt = addCondition(prompt,"サービス概要",detail)
+    prompt = addCondition(prompt,"3つのセールスポイント",sales_points)
+    # for index, point in enumerate(sales_points):
+    #     prompt = addCondition(prompt,"セールスポイント" + index,point)
+
+    prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し、下記ページを参照しながらデザインを充実させてください。\n"
+    prompt += referenceUrl
+
     return prompt
 
 @app.route('/')
@@ -102,14 +120,18 @@ def submit():
     color = request.form['color']
     age = request.form['age']
     url = request.form['url']
-    detail = ''
+    detail = request.form['detail']
     
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
     catchcopy = openai_llm("あなたはプロのライターです。", context)
 
+    #セールスポイント作成
+    context = makepromptForSalesPoint(industry,target,gender,age,color,detail,catchcopy)
+    sales_points = openai_llm("あなたはプロのライターです。", context)
+
     #HTMLを生成させる
-    context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
+    context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)
     response_message = openai_llm("あなたはプロのwebデザイナーです。", context)
 
     #return catchcopy + '\n' + response_message
