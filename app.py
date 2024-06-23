@@ -63,16 +63,13 @@ def submit():
     gender = request.form['gender']
     color = request.form['color']
     age = request.form['age']
- 
-    question = '飲食店向けのHTMLを作成してください'
-    context = f'ラーメン屋業界向け'
     
     #キャッチコピーを考えさせる
-    context = makePromptForCatchcopy(businessType,target,personasGender,imageColor,detail)
-    catchcopy = openai_llm("あなたはプロのライターです。", context) 
+    context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
+    catchcopy = openai_llm("あなたはプロのwebデザイナーです。", context) 
 
     #HTMLを生成させる
-    context = makepromptForLP(businessType,target,personasGender,imageColor,detail,catchcopy)
+    context = makepromptForLP(industry,target,gender,age,color,detail,catchcopy)
     response_message = openai_llm(question, context)
 
     filename = HTML_FOLDER + generate_random_filename(10,"html")
@@ -85,24 +82,24 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 
-def makePromptForCatchcopy(businessType,target,personasGender,imageColor,detail):
+def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,detail):
     prompt = "以下の特徴をもつビジネスのキャッチコピーを考えてください。"
     addCondition(prompt,"業界",businessType)
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
-    prompt = addCondition(prompt,"ペルソナの年齢",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",age)
     prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,"",detail)
     
     return prompt
 
 
-def makepromptForLP(referenceUrl,businessType,target,personasGender,imageColor,detail,catchcopy):    
+def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy):    
     prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
     addCondition(prompt,"業界",businessType)
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
-    prompt = addCondition(prompt,"ペルソナの年齢",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",age)
     prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,catchcopy)
     prompt = addCondition(prompt,"",detail)
