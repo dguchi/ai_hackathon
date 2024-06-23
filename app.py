@@ -19,6 +19,12 @@ client = OpenAI(
 
 app = Flask(__name__,static_folder='html')
 
+import re
+
+def extract_html_content(text):
+    new_string = text.replace("'''html", "")
+    return new_string
+
 def addCondition(prompt,conditonType,condition):
     if(len(condition) != 0):
         prompt += "\n" + "・"
@@ -110,13 +116,14 @@ def submit():
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
-    response_message = openai_llm("あなたはプロのwebデザイナーです。", context)
+    response_message = openai_llm("あなたはプロのwebデザイナーです。HTML部分のみ返してください", context)
 
     #return catchcopy + '\n' + response_message
 
     filename = HTML_FOLDER + generate_random_filename(10,"html")
     with open(filename, 'w', encoding='utf-8') as f:
-        f.write(response_message)
+        html_text = extract_html_content(response_message)
+        f.write(html_text)
     
     return redirect(filename)
 
