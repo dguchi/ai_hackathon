@@ -1,18 +1,56 @@
 # app.py
 import random
 import string
+import os
 
 from flask import Flask, request, redirect ,render_template
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+key = os.getenv('OPENAI_API_KEY')
 
 HTML_FOLDER = './html/'
 
 # キーは環境変数に設定
 client = OpenAI(
-    #    api_key=apikey
+   api_key=key
 )
 
 app = Flask(__name__,static_folder='html')
+
+def addCondition(prompt,conditonType,condition):
+    if(len(condition) != 0):
+        prompt += "\n" + "・"
+        if (len(conditonType) != 0):
+            prompt += str(conditonType) + "は" + str(condition)
+        else:
+            prompt += condition    
+    return prompt
+
+def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,detail):
+    prompt = "以下の特徴をもつビジネスのキャッチコピーを考えてください。"
+    addCondition(prompt,"業界",businessType)
+    prompt = addCondition(prompt,"ターゲット",target)
+    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",age)
+    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
+    prompt = addCondition(prompt,"",detail)
+    
+    return prompt
+
+
+def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy):    
+    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
+    addCondition(prompt,"業界",businessType)
+    prompt = addCondition(prompt,"ターゲット",target)
+    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",age)
+    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
+    prompt = addCondition(prompt,"キャッチコピー",catchcopy)
+    prompt = addCondition(prompt,"",detail)
+        
+    return prompt
 
 @app.route('/')
 def form():
@@ -68,11 +106,13 @@ def submit():
     
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
-    catchcopy = openai_llm("あなたはプロのwebデザイナーです。", context) 
+    catchcopy = openai_llm("あなたはプロのライターです。", context)
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
-    response_message = openai_llm(question, context)
+    response_message = openai_llm("あなたはプロのwebデザイナーです。", context)
+
+    return catchcopy + '\n' + response_message
 
     filename = HTML_FOLDER + generate_random_filename(10,"html")
     with open(filename, 'w') as f:
@@ -84,36 +124,3 @@ if __name__ == '__main__':
     app.run(debug=True)
 
 
-def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,detail):
-    prompt = "以下の特徴をもつビジネスのキャッチコピーを考えてください。"
-    addCondition(prompt,"業界",businessType)
-    prompt = addCondition(prompt,"ターゲット",target)
-    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
-    prompt = addCondition(prompt,"ペルソナの年齢",age)
-    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
-    prompt = addCondition(prompt,"",detail)
-    
-    return prompt
-
-
-def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy):    
-    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
-    addCondition(prompt,"業界",businessType)
-    prompt = addCondition(prompt,"ターゲット",target)
-    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
-    prompt = addCondition(prompt,"ペルソナの年齢",age)
-    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
-    prompt = addCondition(prompt,catchcopy)
-    prompt = addCondition(prompt,"",detail)
-        
-    return prompt
-
-
-def addCondition(prompt,conditonType,condition):
-    if(len(condition) != 0):
-        prompt += "\n" + "・"
-        if (len(conditonType) != 0):
-            prompt += str(conditonType) + "は" + str(condition)
-        else:
-            prompt += condition    
-    return prompt
