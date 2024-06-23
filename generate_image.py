@@ -120,14 +120,14 @@ def generate_image(prompt: str, file_name: str):
         raise Warning("Generation failed NSFW classifier")
 
     # Save and display result
-    generated = f"{file_name}.{output_format}"
+    generated = f"{'html/' + file_name}.{output_format}"
     with open(generated, "wb") as f:
         f.write(output_image)
     print(f"Saved image {generated}")
 
 
 def make_prompt_for_main_image(business_type, target, personas_gender, age, image_color, detail, catchcopy):
-    prompt = "あなたは魅力的で目を引くランディングページのメイン画像を生成します。この画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。"
+    prompt = "あなたは魅力的で目を引くランディングページのメイン背景画像を生成します。\n"
     prompt = addCondition(prompt, "ビジネスタイプ", business_type)
     prompt = addCondition(prompt, "ターゲット", target)
     prompt = addCondition(prompt, "ペルソナの性別", personas_gender)
@@ -135,6 +135,7 @@ def make_prompt_for_main_image(business_type, target, personas_gender, age, imag
     prompt = addCondition(prompt, "LPのイメージカラー", image_color)
     prompt = addCondition(prompt, "キャッチコピー", catchcopy)
     prompt = addCondition(prompt, "", detail)
+    prompt += "この画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。また文字を画像内に表示する必要はありません。"
     return prompt
 
 
@@ -160,12 +161,12 @@ def addCondition(pronpt, conditonType, condition):
 
 
 def translate_text(text, target_lang):
-    translator = deepl.Translator(os.getenv("DEEPL_API_KEY"))
+    translator = deepl.Translator(DEEPL_API_KEY)
     result = translator.translate_text(text, target_lang=target_lang)
     return result.text
 
 
-def genereate_hero_image(
+def generate_hero_image(
     business_type: str, target: str, personas_gender: str, age: str, image_color: str, detail: str, catchcopy: str
 ):
     prompt = make_prompt_for_main_image(business_type, target, personas_gender, age, image_color, detail, catchcopy)
@@ -181,12 +182,12 @@ def generate_feature_images(sales_points: list[str]):
         generate_image(prompt, f"feature_{index}")
 
 
-genereate_hero_image(
-    business_type="飲食店",
-    target="",
-    personas_gender="女性",
-    age="20代",
-    image_color="オレンジ",
-    detail="",
-    catchcopy="",
-)
+# genereate_hero_image(
+#     business_type="飲食店",
+#     target="",
+#     personas_gender="女性",
+#     age="20代",
+#     image_color="オレンジ",
+#     detail="",
+#     catchcopy="",
+# )

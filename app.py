@@ -7,6 +7,7 @@ import re
 from flask import Flask, request, redirect ,render_template
 from openai import OpenAI
 from dotenv import load_dotenv
+from generate_image import generate_hero_image
 
 load_dotenv()
 key = os.getenv('OPENAI_API_KEY')
@@ -71,9 +72,10 @@ def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageCol
     for index, point in enumerate(sales_points):
         prompt = addCondition(prompt, "セールスポイント" + str(index), point)
 
-    prompt += "キャッチコピー、セールスポイントの内容はページ内で必ず記載し、tailwindを使用し下記ページを参照しながらレスポンシブデザイン、を充実させてください。\n"
+    prompt += "キャッチコピー、セールスポイントの内容はページ内で必ず記載し、下記ページを参照しながらレスポンシブデザイン、を充実させてください。\n"
     prompt += referenceUrl
     prompt += "回答はHTML部分を返答してください。\n"
+    prompt += 'また背景画像として、background-image: url("./hero.png");」を指定するようにしてください。'
 
     return prompt
 
@@ -147,6 +149,9 @@ def submit():
     context = makepromptForSalesPoint(industry,target,gender,age,color,detail,catchcopy)
     sales_points_res = openai_llm("あなたはプロのライターです。", context)
     sales_points = split_by_delimiters(sales_points_res)
+
+    #画像生成
+    # generate_hero_image(industry,target,gender,age,color,detail,catchcopy)
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)
