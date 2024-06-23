@@ -60,7 +60,7 @@ def makepromptForSalesPoint(businessType, target, personasGender, age, imageColo
     return prompt
 
 def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy,sales_points):    
-    prompt = "以下の特徴をもつランディングページのHTMLを作成し、HTML部分のみを返答してください。\n"
+    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n"
     addCondition(prompt,"業界",businessType)
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
@@ -71,8 +71,9 @@ def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageCol
     for index, point in enumerate(sales_points):
         prompt = addCondition(prompt, "セールスポイント" + str(index), point)
 
-    prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し下記ページを参照しながらデザインを充実させてください。\n"
+    prompt += "キャッチコピー、セールスポイントの内容はページ内で必ず記載し、tailwindを使用し下記ページを参照しながらレスポンシブデザイン、を充実させてください。\n"
     prompt += referenceUrl
+    prompt += "回答はHTML部分を返答してください。\n"
 
     return prompt
 
