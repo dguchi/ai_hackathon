@@ -8,7 +8,7 @@
 <body>
     <div class="max-w-md mx-auto my-4">
         ペルソナ設定
-        <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" action="/submit" method="post">
+        <form id="my-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" action="/submit" method="post">
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="industry">
                     業界選択
@@ -105,15 +105,60 @@
                     name="age"
                 >
             </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    参照ページ
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="url"
+                    type="text"
+                    placeholder="参照ページURLを入力してください"
+                    name="url"
+                >
+            </div>
             <div class="flex items-center justify-between">
                 <button
+                    id="submit-btn"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     type="submit"
+                    disabled
                 >
                 作成する
                 </button>
             </div>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const form = document.getElementById('my-form');
+            const inputs = form.querySelectorAll('input');
+            const submitBtn = document.getElementById('submit-btn');
+
+            function checkInputs() {
+                let allFilled = true;
+                inputs.forEach(input => {
+                    if (input.value.trim() === '') {
+                        allFilled = false;
+                    }
+                });
+
+                submitBtn.disabled = !allFilled;
+                if (allFilled) {
+                    submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    submitBtn.classList.add('bg-blue-500', 'hover:bg-blue-700', 'cursor-pointer');
+                } else {
+                    submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    submitBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700', 'cursor-pointer');
+                }
+            }
+
+            inputs.forEach(input => {
+                input.addEventListener('input', checkInputs);
+            });
+
+            checkInputs();
+        });
+    </script>
 </body>
 </html>
