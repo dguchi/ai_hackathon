@@ -2,6 +2,7 @@
 import random
 import string
 import os
+import re
 
 from flask import Flask, request, redirect ,render_template
 from openai import OpenAI
@@ -49,6 +50,7 @@ def makepromptForSalesPoint(businessType, target, personasGender, age, imageColo
     prompt = addCondition(prompt,"LPのイメージカラー", imageColor)
     prompt = addCondition(prompt,"キャッチコピー", catchcopy)
     prompt = addCondition(prompt,"サービス概要", detail)
+    prompt += "その際、返答の形式は「1.」「2.」「3.」で並べる形でお願いします。"
 
     return prompt
 
@@ -61,14 +63,23 @@ def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageCol
     prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,"キャッチコピー",catchcopy)
     prompt = addCondition(prompt,"サービス概要",detail)
-    prompt = addCondition(prompt,"3つのセールスポイント",sales_points)
-    # for index, point in enumerate(sales_points):
-    #     prompt = addCondition(prompt,"セールスポイント" + index,point)
+    for index, point in enumerate(sales_points):
+        prompt = addCondition(prompt, "セールスポイント" + str(index), point)
 
     prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し、下記ページを参照しながらデザインを充実させてください。\n"
     prompt += referenceUrl
 
     return prompt
+
+def split_by_delimiters(input_string):
+    # 正規表現パターンを定義して、「1.」、「2.」、「3.」のような形式をマッチさせる
+    pattern = r'\d+\.'  # 区切り文字をキャプチャしない
+    # パターンに基づいて分割
+    parts = re.split(pattern, input_string)
+    # 最初の要素は空文字になるため、削除
+    if parts[0] == '':
+        parts = parts[1:]
+    return parts
 
 @app.route('/')
 def form():
@@ -128,7 +139,8 @@ def submit():
 
     #セールスポイント作成
     context = makepromptForSalesPoint(industry,target,gender,age,color,detail,catchcopy)
-    sales_points = openai_llm("あなたはプロのライターです。", context)
+    sales_points_res = openai_llm("あなたはプロのライターです。", context)
+    sales_points = split_by_delimiters(sales_points_res)
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)
