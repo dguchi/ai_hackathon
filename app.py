@@ -7,6 +7,10 @@ app = Flask(__name__)
 def form():
     return render_template('index.html')
 
+@app.route('/lp')
+def lp():
+    return render_template('lp.html')
+
 @app.route('/submit', methods=['POST'])
 def submit():
     username = request.form['username']
