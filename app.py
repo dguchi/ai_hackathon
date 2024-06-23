@@ -71,7 +71,7 @@ def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageCol
     for index, point in enumerate(sales_points):
         prompt = addCondition(prompt, "セールスポイント" + str(index), point)
 
-    prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し、下記ページを参照しながらデザインを充実させてください。\n"
+    prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し下記ページを参照しながらデザインを充実させてください。\n"
     prompt += referenceUrl
 
     return prompt
