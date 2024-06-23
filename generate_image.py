@@ -3,14 +3,22 @@ import json
 import os
 import time
 
+import deepl
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-
+# 環境変数を上書き
+os.environ["STABILITY_KEY"] = "sk-vnCJ5WrbEO5EYGLLcWrrNKQWC437FGmgBDZOzdPiE1meROeV"
 # @title Define functions
 
-STABILITY_KEY = os.getenv("STABILITY_KEY")
+# STABILITY_KEY = os.getenv("STABILITY_KEY")
+STABILITY_KEY = "sk-vnCJ5WrbEO5EYGLLcWrrNKQWC437FGmgBDZOzdPiE1meROeV"
+# DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
+DEEPL_API_KEY = "e13bc06f-6a53-4cf5-9d3f-ca089e1fb43d:fx"
+
+
+print(STABILITY_KEY)
 
 
 def send_generation_request(
@@ -89,8 +97,8 @@ def generate_image(prompt: str, file_name: str):
     aspect_ratio = "3:2"  # @param ["21:9", "16:9", "3:2", "5:4", "1:1", "4:5", "2:3", "9:16", "9:21"]
     seed = 0  # @param {type:"integer"}
     output_format = "png"  # @param ["webp", "jpeg", "png"]
-
-    host = f"https://api.stability.ai/v2beta/stable-image/generate/ultra"
+    engine_id = "sd3"
+    host = f"https://api.stability.ai/v2beta/stable-image/generate/{engine_id}"
 
     params = {
         "prompt": prompt,
@@ -151,17 +159,25 @@ def addCondition(pronpt, conditonType, condition):
     return pronpt
 
 
+def translate_text(text, target_lang):
+    translator = deepl.Translator(os.getenv("DEEPL_API_KEY"))
+    result = translator.translate_text(text, target_lang=target_lang)
+    return result.text
+
+
 def genereate_hero_image(
     business_type: str, target: str, personas_gender: str, age: str, image_color: str, detail: str, catchcopy: str
 ):
     prompt = make_prompt_for_main_image(business_type, target, personas_gender, age, image_color, detail, catchcopy)
-    print(prompt)
-    generate_image(prompt, "hero")
+    translated_prompt = translate_text(prompt, "EN-US")
+    print(translated_prompt)
+    generate_image(translated_prompt, "hero")
 
 
 def generate_feature_images(sales_points: list[str]):
     prompts = make_prompt_for_feature_images(sales_points)
-    for index, prompt in enumerate(prompts):
+    translated_prompts = [translate_text(prompt, "EN-US") for prompt in prompts]
+    for index, prompt in enumerate(translated_prompts):
         generate_image(prompt, f"feature_{index}")
 
 
