@@ -112,10 +112,10 @@ def submit():
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
     response_message = openai_llm("あなたはプロのwebデザイナーです。", context)
 
-    return catchcopy + '\n' + response_message
+    #return catchcopy + '\n' + response_message
 
     filename = HTML_FOLDER + generate_random_filename(10,"html")
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write(response_message)
     
     return redirect(filename)
