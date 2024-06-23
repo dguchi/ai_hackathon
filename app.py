@@ -63,13 +63,15 @@ def submit():
     gender = request.form['gender']
     color = request.form['color']
     age = request.form['age']
+    url = request.form['url']
+    detail = ''
     
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
     catchcopy = openai_llm("あなたはプロのwebデザイナーです。", context) 
 
     #HTMLを生成させる
-    context = makepromptForLP(industry,target,gender,age,color,detail,catchcopy)
+    context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
     response_message = openai_llm(question, context)
 
     filename = HTML_FOLDER + generate_random_filename(10,"html")
