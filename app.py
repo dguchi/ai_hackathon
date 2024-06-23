@@ -67,9 +67,14 @@ def submit():
     question = '飲食店向けのHTMLを作成してください'
     context = f'ラーメン屋業界向け'
     
-    #prompt = make_prompt_for_ChatGPT(industry, target, gender, color, age, response_message)    
+    #キャッチコピーを考えさせる
+    context = makePromptForCatchcopy(businessType,target,personasGender,imageColor,detail)
+    catchcopy = openai_llm("あなたはプロのライターです。", context) 
+
+    #HTMLを生成させる
+    context = makepromptForLP(businessType,target,personasGender,imageColor,detail,catchcopy)
     response_message = openai_llm(question, context)
-    
+
     filename = HTML_FOLDER + generate_random_filename(10,"html")
     with open(filename, 'w') as f:
         f.write(response_message)
@@ -78,3 +83,38 @@ def submit():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+def makePromptForCatchcopy(businessType,target,personasGender,imageColor,detail):
+    prompt = "以下の特徴をもつビジネスのキャッチコピーを考えてください。"
+    addCondition(prompt,"業界",businessType)
+    prompt = addCondition(prompt,"ターゲット",target)
+    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",personasGender)
+    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
+    prompt = addCondition(prompt,"",detail)
+    
+    return prompt
+
+
+def makepromptForLP(referenceUrl,businessType,target,personasGender,imageColor,detail,catchcopy):    
+    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
+    addCondition(prompt,"業界",businessType)
+    prompt = addCondition(prompt,"ターゲット",target)
+    prompt = addCondition(prompt,"ペルソナの性別",personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢",personasGender)
+    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
+    prompt = addCondition(prompt,catchcopy)
+    prompt = addCondition(prompt,"",detail)
+        
+    return prompt
+
+
+def addCondition(prompt,conditonType,condition):
+    if(len(condition) != 0):
+        prompt += "\n" + "・"
+        if (len(conditonType) != 0):
+            prompt += str(conditonType) + "は" + str(condition)
+        else:
+            prompt += condition    
+    return prompt
