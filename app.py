@@ -2,6 +2,7 @@
 import random
 import string
 import os
+import re
 
 from flask import Flask, request, redirect ,render_template
 from openai import OpenAI
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 key = os.getenv('OPENAI_API_KEY')
+stable_difussion_key = os.getenv('STABLE_DIFUSION_API_KEY')
 
 HTML_FOLDER = './html/'
 
@@ -19,10 +21,9 @@ client = OpenAI(
 
 app = Flask(__name__,static_folder='html')
 
-import re
-
 def extract_html_content(text):
-    new_string = text.replace("'''html", "")
+    new_string = text.replace("```html", "")
+    new_string = new_string.replace("```", "")
     return new_string
 
 def addCondition(prompt,conditonType,condition):
@@ -45,18 +46,45 @@ def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,det
     
     return prompt
 
+def makepromptForSalesPoint(businessType, target, personasGender, age, imageColor, detail, catchcopy):    
+    prompt = "以下の特徴をもつランディングページに記載するセールスポイントを3つ考えてください。"
+    addCondition(prompt,"業界", businessType)
+    prompt = addCondition(prompt,"ターゲット", target)
+    prompt = addCondition(prompt,"ペルソナの性別", personasGender)
+    prompt = addCondition(prompt,"ペルソナの年齢", age)
+    prompt = addCondition(prompt,"LPのイメージカラー", imageColor)
+    prompt = addCondition(prompt,"キャッチコピー", catchcopy)
+    prompt = addCondition(prompt,"サービス概要", detail)
+    prompt += "その際、返答の形式は「1.」「2.」「3.」で並べる形でお願いします。"
 
-def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy):    
-    prompt = "以下の特徴をもつランディングページのHTMLを作成してください。\n" + "その際、以下のようなページを参照してください。" + referenceUrl
+    return prompt
+
+def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageColor,detail,catchcopy,sales_points):    
+    prompt = "以下の特徴をもつランディングページのHTMLを作成し、HTML部分のみを返答してください。\n"
     addCondition(prompt,"業界",businessType)
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
     prompt = addCondition(prompt,"ペルソナの年齢",age)
     prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,"キャッチコピー",catchcopy)
-    prompt = addCondition(prompt,"",detail)
-        
+    prompt = addCondition(prompt,"サービス概要",detail)
+    for index, point in enumerate(sales_points):
+        prompt = addCondition(prompt, "セールスポイント" + str(index), point)
+
+    prompt += "キャッチコピー、セールスポイントはページ内で必ず記載し、tailwindを使用し、下記ページを参照しながらデザインを充実させてください。\n"
+    prompt += referenceUrl
+
     return prompt
+
+def split_by_delimiters(input_string):
+    # 正規表現パターンを定義して、「1.」、「2.」、「3.」のような形式をマッチさせる
+    pattern = r'\d+\.'  # 区切り文字をキャプチャしない
+    # パターンに基づいて分割
+    parts = re.split(pattern, input_string)
+    # 最初の要素は空文字になるため、削除
+    if parts[0] == '':
+        parts = parts[1:]
+    return parts
 
 @app.route('/')
 def form():
@@ -108,15 +136,20 @@ def submit():
     color = request.form['color']
     age = request.form['age']
     url = request.form['url']
-    detail = ''
+    detail = request.form['detail']
     
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
     catchcopy = openai_llm("あなたはプロのライターです。", context)
 
+    #セールスポイント作成
+    context = makepromptForSalesPoint(industry,target,gender,age,color,detail,catchcopy)
+    sales_points_res = openai_llm("あなたはプロのライターです。", context)
+    sales_points = split_by_delimiters(sales_points_res)
+
     #HTMLを生成させる
-    context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy)
-    response_message = openai_llm("あなたはプロのwebデザイナーです。HTML部分のみ返してください", context)
+    context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)
+    response_message = openai_llm("あなたはプロのwebデザイナーです。", context)
 
     #return catchcopy + '\n' + response_message
 
