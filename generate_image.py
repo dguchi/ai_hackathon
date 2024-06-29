@@ -136,7 +136,7 @@ def make_prompt_for_main_image(business_type, target, personas_gender, age, imag
     prompt = addCondition(prompt, "LPのイメージカラー", image_color)
     prompt = addCondition(prompt, "キャッチコピー", catchcopy)
     prompt = addCondition(prompt, "", detail)
-    prompt += "この画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。また文字を画像内に表示する必要はありません。"
+    prompt += "\nこの画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。また文字を画像内に表示する必要はありません。"
     return prompt
 
 
