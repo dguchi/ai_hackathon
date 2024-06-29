@@ -7,7 +7,7 @@ import re
 from flask import Flask, request, redirect ,render_template
 from openai import OpenAI
 from dotenv import load_dotenv
-from generate_image import generate_hero_image
+from generate_image import generate_hero_image_DallE
 
 load_dotenv()
 key = os.getenv('OPENAI_API_KEY')
@@ -133,13 +133,16 @@ def generate_random_filename(length=10, extension=None):
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    industry = request.form['industry']
-    target = request.form['target']
-    gender = request.form['gender']
-    color = request.form['color']
-    age = request.form['age']
-    url = request.form['url']
-    detail = request.form['detail']
+    form_data = request.form.to_dict()
+    
+    industry = form_data.get('industry')
+    target = form_data.get('target')
+    gender = form_data.get('gender')
+    color = form_data.get('color')
+    age = form_data.get('age')
+    url = form_data.get('url')
+    detail = form_data.get('detail')
+    
     
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
@@ -151,7 +154,8 @@ def submit():
     sales_points = split_by_delimiters(sales_points_res)
 
     #画像生成
-    # generate_hero_image(industry,target,gender,age,color,detail,catchcopy)
+    form_data['catchcopy']= catchcopy
+    generate_hero_image_DallE(client,form_data)
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)
