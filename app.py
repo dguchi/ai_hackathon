@@ -4,10 +4,10 @@ import string
 import os
 import re
 
-from flask import Flask, request, redirect ,render_template
+from flask import Flask, request, redirect ,render_template,jsonify
 from openai import OpenAI
 from dotenv import load_dotenv
-from generate_image import generate_hero_image
+from generate_image import generate_hero_image_DallE
 
 load_dotenv()
 key = os.getenv('OPENAI_API_KEY')
@@ -42,7 +42,7 @@ def makePromptForCatchcopy(businessType,target,personasGender,age,imageColor,det
     prompt = addCondition(prompt,"ターゲット",target)
     prompt = addCondition(prompt,"ペルソナの性別",personasGender)
     prompt = addCondition(prompt,"ペルソナの年齢",age)
-    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
+#    prompt = addCondition(prompt,"LPのイメージカラー",imageColor)
     prompt = addCondition(prompt,"",detail)
     
     return prompt
@@ -53,7 +53,7 @@ def makepromptForSalesPoint(businessType, target, personasGender, age, imageColo
     prompt = addCondition(prompt,"ターゲット", target)
     prompt = addCondition(prompt,"ペルソナの性別", personasGender)
     prompt = addCondition(prompt,"ペルソナの年齢", age)
-    prompt = addCondition(prompt,"LPのイメージカラー", imageColor)
+ #   prompt = addCondition(prompt,"LPのイメージカラー", imageColor)
     prompt = addCondition(prompt,"キャッチコピー", catchcopy)
     prompt = addCondition(prompt,"サービス概要", detail)
     prompt += "その際、返答の形式は「1.」「2.」「3.」で並べる形でお願いします。"
@@ -74,6 +74,7 @@ def makepromptForLP(referenceUrl,businessType,target,personasGender,age,imageCol
 
     prompt += "キャッチコピー、セールスポイントの内容はページ内で必ず記載し、下記ページを参照しながらレスポンシブデザイン、を充実させてください。\n"
     prompt += referenceUrl
+    prompt += "\nセールスポイントの内容は「1.」「2.」「3.」でそれぞれboxに入れて横に並べる形でお願いします。"
     prompt += "回答はHTML部分を返答してください。\n"
     prompt += 'また背景画像として、background-image: url("./hero.png");」を指定するようにしてください。'
 
@@ -111,7 +112,7 @@ def openai_llm(question, context):
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages,
-        temperature=0
+        temperature=1
     )
     response_message = response.choices[0].message.content
     return response_message
@@ -131,27 +132,51 @@ def generate_random_filename(length=10, extension=None):
         return random_string
 
 
-@app.route('/submit', methods=['POST'])
+@app.route('/createCatchcopy', methods=['POST'])
 def submit():
-    industry = request.form['industry']
-    target = request.form['target']
-    gender = request.form['gender']
-    color = request.form['color']
-    age = request.form['age']
-    url = request.form['url']
-    detail = request.form['detail']
+    form_data = request.form.to_dict()
     
+    industry = form_data.get('industry')
+    target = form_data.get('target')
+    gender = form_data.get('gender')
+    color = form_data.get('color')
+    age = form_data.get('age')
+    url = form_data.get('url')
+    detail = form_data.get('detail')
+
     #キャッチコピーを考えさせる
     context = makePromptForCatchcopy(industry,target,gender,age,color,detail)
     catchcopy = openai_llm("あなたはプロのライターです。", context)
+    
+    print(context)
 
+    #cathcopyをJson形式で返す
+    return jsonify({"catchcopy": catchcopy,
+                    "prompt": context})
+
+    
+@app.route('/submit', methods=['POST'])
+def createHtml():    
+    form_data = request.form.to_dict()
+    
+    industry = form_data.get('industry')
+    target = form_data.get('target')
+    gender = form_data.get('gender')
+    color = form_data.get('color')
+    age = form_data.get('age')
+    url = form_data.get('url')
+    detail = form_data.get('detail')
+    
+    catchcopy = form_data.get('catchcopy')
+    
     #セールスポイント作成
     context = makepromptForSalesPoint(industry,target,gender,age,color,detail,catchcopy)
     sales_points_res = openai_llm("あなたはプロのライターです。", context)
     sales_points = split_by_delimiters(sales_points_res)
 
     #画像生成
-    # generate_hero_image(industry,target,gender,age,color,detail,catchcopy)
+    form_data['catchcopy']= catchcopy
+    generate_hero_image_DallE(client,form_data)
 
     #HTMLを生成させる
     context = makepromptForLP(url, industry,target,gender,age,color,detail,catchcopy,sales_points)

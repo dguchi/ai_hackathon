@@ -4,6 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        #message {
+            position: relative;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #button_area{
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+
 </head>
 <body>
     <div class="max-w-md mx-auto my-4">
@@ -139,17 +169,27 @@
                 <button
                     id="submit-btn"
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="submit"
+                    type="button"
                     disabled
                 >
                 作成する
                 </button>
             </div>
+            <input id="catchcopy" type="hidden" name="catchcopy" value="dummy4send_button" />
         </form>
     </div>
+    <!--  リトライ用画面  -->
+    <div id="overlay">
+        <div id="message"></div>
+        <div id="button_area">
+            <button id="ok-btn" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white">OK</button>
+            <button id="retry-btn" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white">リトライ</button>
+        </div> 
+    </div>
     <script>
+        const form = document.getElementById('my-form');
+ 
         document.addEventListener('DOMContentLoaded', (event) => {
-            const form = document.getElementById('my-form');
             const inputs = form.querySelectorAll('input');
             const submitBtn = document.getElementById('submit-btn');
 
@@ -177,6 +217,79 @@
 
             checkInputs();
         });
+    </script>
+    <script>
+        const submitBtn = document.getElementById('submit-btn');
+        const okBtn = document.getElementById('ok-btn');
+        const retryBtn = document.getElementById('retry-btn');
+
+        submitBtn.addEventListener('click', (event) => {
+            createCatchCopy();
+        })
+        
+        function btnDisabled(btnArray){
+            btnArray.map((btn) => {
+                btn.disabled = true
+                btn.classList.remove('bg-blue-500');
+                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            })
+        }
+
+        function btnEnabled(btnArray){
+            btnArray.map((btn) => {
+                btn.disabled = false
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-blue-500', 'hover:bg-blue-700', 'cursor-pointer');
+            })
+        }
+
+        function showOverlay(text) {
+            const overlay = document.getElementById('overlay');
+            const message = document.getElementById('message');
+            message.textContent = text;
+            overlay.style.display = 'block';
+
+           // setTimeout(() => {
+           //     overlay.style.display = 'none';
+           //     form.submit();
+           // }, 30000);
+        }
+
+        function createCatchCopy(){
+            const form = document.getElementById('my-form');
+            const formData = new FormData(form);
+
+            fetch('/createCatchcopy', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                document.getElementById('catchcopy').value=data.catchcopy;
+  
+                btnEnabled([okBtn,retryBtn])
+                showOverlay(data.catchcopy);    
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });     
+        }
+
+        okBtn.addEventListener( 'click',(event)=> {
+            btnDisabled([okBtn,retryBtn])
+            form.submit();
+        })
+
+        retryBtn.addEventListener('click', (event) => {
+            btnDisabled([okBtn,retryBtn])
+            createCatchCopy();
+        })
     </script>
 </body>
 </html>

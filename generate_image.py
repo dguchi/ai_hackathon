@@ -3,19 +3,20 @@ import json
 import os
 import time
 
-import deepl
+#import deepl
 import requests
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 # 環境変数を上書き
-os.environ["STABILITY_KEY"] = "sk-vnCJ5WrbEO5EYGLLcWrrNKQWC437FGmgBDZOzdPiE1meROeV"
+os.environ["STABILITY_KEY"] = ""
 # @title Define functions
 
 # STABILITY_KEY = os.getenv("STABILITY_KEY")
-STABILITY_KEY = "sk-vnCJ5WrbEO5EYGLLcWrrNKQWC437FGmgBDZOzdPiE1meROeV"
+STABILITY_KEY = ""
 # DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
-DEEPL_API_KEY = "e13bc06f-6a53-4cf5-9d3f-ca089e1fb43d:fx"
+#DEEPL_API_KEY = ""
 
 
 print(STABILITY_KEY)
@@ -135,7 +136,7 @@ def make_prompt_for_main_image(business_type, target, personas_gender, age, imag
     prompt = addCondition(prompt, "LPのイメージカラー", image_color)
     prompt = addCondition(prompt, "キャッチコピー", catchcopy)
     prompt = addCondition(prompt, "", detail)
-    prompt += "この画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。また文字を画像内に表示する必要はありません。"
+    prompt += "\nこの画像は、訪問者に強い印象を与え、ページの目的を明確に伝えるものでなければなりません。また文字を画像内に表示する必要はありません。"
     return prompt
 
 
@@ -161,9 +162,9 @@ def addCondition(pronpt, conditonType, condition):
 
 
 def translate_text(text, target_lang):
-    translator = deepl.Translator(DEEPL_API_KEY)
-    result = translator.translate_text(text, target_lang=target_lang)
-    return result.text
+    #translator = deepl.Translator(DEEPL_API_KEY)
+    #result = translator.translate_text(text, target_lang=target_lang)
+    return text
 
 
 def generate_hero_image(
@@ -180,6 +181,32 @@ def generate_feature_images(sales_points: list[str]):
     translated_prompts = [translate_text(prompt, "EN-US") for prompt in prompts]
     for index, prompt in enumerate(translated_prompts):
         generate_image(prompt, f"feature_{index}")
+
+
+def generate_hero_image_DallE(
+    client: OpenAI,
+    form_data: dict
+):  
+    prompt = make_prompt_for_main_image(form_data.get("industry"),
+                                        form_data.get("target"),
+                                        form_data.get("gender"),
+                                        form_data.get("age"), 
+                                        form_data.get("color"), 
+                                        form_data.get("detail"),
+                                        form_data.get("catchcopy"))
+    print(prompt)
+    response = client.images.generate(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        quality="standard",
+        n=1
+    )
+    image_url = response.data[0].url
+    image_data = requests.get(image_url).content
+
+    with open("./html/hero.png", "wb") as file:
+        file.write(image_data)
 
 
 # genereate_hero_image(
